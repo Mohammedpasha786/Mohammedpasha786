@@ -1,0 +1,157 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <ctime>
+
+struct Book {
+    std::string title;
+    std::string author;
+    std::string ISBN;
+    bool isAvailable;
+};
+
+struct Borrower {
+    std::string name;
+    std::unordered_map<std::string, std::time_t> borrowedBooks; // ISBN -> borrow date
+};
+
+std::vector<Book> books;
+std::unordered_map<std::string, Borrower> borrowers; // Borrower name -> Borrower data
+
+void addBook() {
+    Book book;
+    std::cout << "Enter book title: ";
+    std::cin.ignore();
+    std::getline(std::cin, book.title);
+    std::cout << "Enter book author: ";
+    std::getline(std::cin, book.author);
+    std::cout << "Enter book ISBN: ";
+    std::getline(std::cin, book.ISBN);
+    book.isAvailable = true;
+    books.push_back(book);
+    std::cout << "Book added successfully.\n";
+}
+
+void searchBook() {
+    std::string searchQuery;
+    std::cout << "Enter book title, author, or ISBN to search: ";
+    std::cin.ignore();
+    std::getline(std::cin, searchQuery);
+
+    for (const auto& book : books) {
+        if (book.title == searchQuery || book.author == searchQuery || book.ISBN == searchQuery) {
+            std::cout << "Book found: " << book.title << " by " << book.author << " (ISBN: " << book.ISBN << "). "
+                      << (book.isAvailable ? "Available" : "Not available") << ".\n";
+            return;
+        }
+    }
+    std::cout << "Book not found.\n";
+}
+
+void checkoutBook() {
+    std::string borrowerName, bookISBN;
+    std::cout << "Enter borrower's name: ";
+    std::cin.ignore();
+    std::getline(std::cin, borrowerName);
+    std::cout << "Enter book ISBN to check out: ";
+    std::getline(std::cin, bookISBN);
+
+    for (auto& book : books) {
+        if (book.ISBN == bookISBN) {
+            if (book.isAvailable) {
+                book.isAvailable = false;
+                borrowers[borrowerName].name = borrowerName;
+                borrowers[borrowerName].borrowedBooks[bookISBN] = std::time(0);
+                std::cout << "Book checked out successfully.\n";
+            } else {
+                std::cout << "Book is not available.\n";
+            }
+            return;
+        }
+    }
+    std::cout << "Book not found.\n";
+}
+
+void returnBook() {
+    std::string borrowerName, bookISBN;
+    std::cout << "Enter borrower's name: ";
+    std::cin.ignore();
+    std::getline(std::cin, borrowerName);
+    std::cout << "Enter book ISBN to return: ";
+    std::getline(std::cin, bookISBN);
+
+    if (borrowers.find(borrowerName) != borrowers.end()) {
+        if (borrowers[borrowerName].borrowedBooks.find(bookISBN) != borrowers[borrowerName].borrowedBooks.end()) {
+            // Calculate fine if any
+            std::time_t now = std::time(0);
+            std::time_t borrowTime = borrowers[borrowerName].borrowedBooks[bookISBN];
+            int daysBorrowed = (now - borrowTime) / (60 * 60 * 24);
+            int fine = (daysBorrowed > 14) ? (daysBorrowed - 14) * 1 : 0; // Assuming $1 fine per day after 14 days
+
+            if (fine > 0) {
+                std::cout << "Book is overdue. Fine: $" << fine << ".\n";
+            } else {
+                std::cout << "Book returned on time.\n";
+            }
+
+            // Mark book as available
+            for (auto& book : books) {
+                if (book.ISBN == bookISBN) {
+                    book.isAvailable = true;
+                    break;
+                }
+            }
+
+            // Remove the book from the borrower's list
+            borrowers[borrowerName].borrowedBooks.erase(bookISBN);
+
+            std::cout << "Book returned successfully.\n";
+        } else {
+            std::cout << "This borrower did not borrow this book.\n";
+        }
+    } else {
+        std::cout << "Borrower not found.\n";
+    }
+}
+
+void displayMenu() {
+    std::cout << "\nLibrary Management System Menu:\n";
+    std::cout << "1. Add Book\n";
+    std::cout << "2. Search Book\n";
+    std::cout << "3. Checkout Book\n";
+    std::cout << "4. Return Book\n";
+    std::cout << "5. Exit\n";
+}
+
+int main() {
+    int choice;
+
+    do {
+        displayMenu();
+        std::cout << "Enter your choice: ";
+        std::cin >> choice;
+
+        switch (choice) {
+            case 1:
+                addBook();
+                break;
+            case 2:
+                searchBook();
+                break;
+            case 3:
+                checkoutBook();
+                break;
+            case 4:
+                returnBook();
+                break;
+            case 5:
+                std::cout << "Exiting Library Management System.\n";
+                break;
+            default:
+                std::cout << "Invalid choice. Please try again.\n";
+        }
+    } while (choice != 5);
+
+    return 0;
+}
