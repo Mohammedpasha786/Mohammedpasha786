@@ -1,46 +1,43 @@
-#include <iostream>
+# Import necessary libraries
+import numpy as np
+import pandas as pd
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 
-int main() {
-    double num1, num2;
-    char operation;
-    double result;
-
-    std::cout << "Welcome to the Simple Calculator!" << std::endl;
-
-    std::cout << "Enter the first number: ";
-    std::cin >> num1;
-
-    std::cout << "Enter an operator (+, -, *, /): ";
-    std::cin >> operation;
-
-    std::cout << "Enter the second number: ";
-    std::cin >> num2;
-
-    switch (operation) {
-        case '+':
-            result = num1 + num2;
-            std::cout << "Result: " << num1 << " + " << num2 << " = " << result << std::endl;
-            break;
-        case '-':
-            result = num1 - num2;
-            std::cout << "Result: " << num1 << " - " << num2 << " = " << result << std::endl;
-            break;
-        case '*':
-            result = num1 * num2;
-            std::cout << "Result: " << num1 << " * " << num2 << " = " << result << std::endl;
-            break;
-        case '/':
-            if (num2 != 0) {
-                result = num1 / num2;
-                std::cout << "Result: " << num1 << " / " << num2 << " = " << result << std::endl;
-            } else {
-                std::cout << "Error: Division by zero is not allowed." << std::endl;
-            }
-            break;
-        default:
-            std::cout << "Error: Invalid operator." << std::endl;
-            break;
-    }
-
-    return 0;
+# Sample dataset: replace this with actual data of customer purchase history
+# Assume columns ['customer_id', 'total_purchase', 'frequency_of_purchase', 'avg_purchase_value']
+data = {
+    'customer_id': [1, 2, 3, 4, 5],
+    'total_purchase': [500, 1500, 200, 1000, 800],
+    'frequency_of_purchase': [10, 40, 5, 30, 20],
+    'avg_purchase_value': [50, 37.5, 40, 33.3, 40]
 }
+
+# Create DataFrame
+df = pd.DataFrame(data)
+
+# Features for clustering (drop customer_id, as it's not a feature)
+X = df.drop('customer_id', axis=1)
+
+# Standardize the data (important for K-means)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Create and fit the KMeans model
+kmeans = KMeans(n_clusters=3, random_state=42)  # Adjust n_clusters as needed
+kmeans.fit(X_scaled)
+
+# Assign clusters to the original data
+df['cluster'] = kmeans.labels_
+
+# Print the clustered data
+print(df)
+
+# Plot the clusters (optional, for visualization)
+plt.scatter(X_scaled[:, 0], X_scaled[:, 1], c=kmeans.labels_, cmap='viridis')
+plt.xlabel('Total Purchase (scaled)')
+plt.ylabel('Frequency of Purchase (scaled)')
+plt.title('Customer Clusters Based on Purchase History')
+plt.show()
+
