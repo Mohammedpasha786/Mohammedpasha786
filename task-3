@@ -1,96 +1,54 @@
-#include <iostream>
-#include <vector>
+# Import necessary libraries
+import os
+import numpy as np
+import cv2
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
 
-void displayBoard(const std::vector<std::vector<char>>& board) {
-    std::cout << "Current board:\n";
-    for (const auto& row : board) {
-        for (char cell : row) {
-            std::cout << cell << ' ';
-        }
-        std::cout << '\n';
-    }
-}
+# Define image size and dataset path
+img_size = 64
+cat_folder = 'path/to/cat_images'
+dog_folder = 'path/to/dog_images'
 
-bool isWin(const std::vector<std::vector<char>>& board, char player) {
-    // Check rows
-    for (const auto& row : board) {
-        if (row[0] == player && row[1] == player && row[2] == player) {
-            return true;
-        }
-    }
-    // Check columns
-    for (int col = 0; col < 3; ++col) {
-        if (board[0][col] == player && board[1][col] == player && board[2][col] == player) {
-            return true;
-        }
-    }
-    // Check diagonals
-    if (board[0][0] == player && board[1][1] == player && board[2][2] == player) {
-        return true;
-    }
-    if (board[0][2] == player && board[1][1] == player && board[2][0] == player) {
-        return true;
-    }
-    return false;
-}
+# Function to load images and create a dataset
+def load_images(folder, label):
+    images = []
+    labels = []
+    for filename in os.listdir(folder):
+        img_path = os.path.join(folder, filename)
+        img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        if img is not None:
+            img_resized = cv2.resize(img, (img_size, img_size))
+            images.append(img_resized.flatten())  # Flatten the image for SVM
+            labels.append(label)
+    return np.array(images), np.array(labels)
 
-bool isDraw(const std::vector<std::vector<char>>& board) {
-    for (const auto& row : board) {
-        for (char cell : row) {
-            if (cell == '.') {
-                return false;
-            }
-        }
-    }
-    return true;
-}
+# Load cat images (label = 0) and dog images (label = 1)
+cat_images, cat_labels = load_images(cat_folder, 0)
+dog_images, dog_labels = load_images(dog_folder, 1)
 
-void makeMove(std::vector<std::vector<char>>& board, char player) {
-    int row, col;
-    while (true) {
-        std::cout << "Player " << player << ", enter your move (row and column): ";
-        std::cin >> row >> col;
-        if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[row][col] == '.') {
-            board[row][col] = player;
-            break;
-        } else {
-            std::cout << "Invalid move. Try again.\n";
-        }
-    }
-}
+# Combine data and labels
+X = np.concatenate((cat_images, dog_images), axis=0)
+y = np.concatenate((cat_labels, dog_labels), axis=0)
 
-void switchPlayer(char& player) {
-    player = (player == 'X') ? 'O' : 'X';
-}
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-int main() {
-    char playAgain;
-    do {
-        std::vector<std::vector<char>> board(3, std::vector<char>(3, '.'));
-        char currentPlayer = 'X';
-        bool gameEnded = false;
+# Create and train the SVM model
+svm_model = SVC(kernel='linear')  # You can try other kernels like 'rbf'
+svm_model.fit(X_train, y_train)
 
-        while (!gameEnded) {
-            displayBoard(board);
-            makeMove(board, currentPlayer);
+# Predict on the test set
+y_pred = svm_model.predict(X_test)
 
-            if (isWin(board, currentPlayer)) {
-                displayBoard(board);
-                std::cout << "Player " << currentPlayer << " wins!\n";
-                gameEnded = true;
-            } else if (isDraw(board)) {
-                displayBoard(board);
-                std::cout << "The game is a draw!\n";
-                gameEnded = true;
-            } else {
-                switchPlayer(currentPlayer);
-            }
-        }
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Model accuracy: {accuracy * 100:.2f}%")
 
-        std::cout << "Do you want to play again? (y/n): ";
-        std::cin >> playAgain;
+# You can also predict on new images
+# img = cv2.imread('path/to/new_image')
+# img_resized = cv2.resize(img, (img_size, img_size)).flatten()
+# prediction = svm_model.predict([img_resized])
+# print("Prediction (0=cat, 1=dog):", prediction)
 
-    } while (playAgain == 'y');
-
-    return 0;
-}
