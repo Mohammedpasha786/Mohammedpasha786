@@ -1,31 +1,47 @@
-#include <iostream>
-#include <cstdlib>
-#include <ctime>
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
 
-int main() {
-    // Initialize random seed
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    
-    // Generate random number between 1 and 100
-    int numberToGuess = std::rand() % 100 + 1;
-    int userGuess = 0;
-
-    std::cout << "Welcome to the Number Guessing Game!" << std::endl;
-    std::cout << "I have selected a number between 1 and 100. Can you guess it?" << std::endl;
-
-    // Loop until the user guesses the correct number
-    while (userGuess != numberToGuess) {
-        std::cout << "Enter your guess: ";
-        std::cin >> userGuess;
-
-        if (userGuess > numberToGuess) {
-            std::cout << "Your guess is too high. Try again." << std::endl;
-        } else if (userGuess < numberToGuess) {
-            std::cout << "Your guess is too low. Try again." << std::endl;
-        } else {
-            std::cout << "Congratulations! You guessed the correct number." << std::endl;
-        }
-    }
-
-    return 0;
+# Sample dataset: replace this with your actual data
+# Assume the columns are ['square_footage', 'bedrooms', 'bathrooms', 'price']
+data = {
+    'square_footage': [1500, 1800, 2400, 3000, 3500],
+    'bedrooms': [3, 4, 3, 5, 4],
+    'bathrooms': [2, 3, 2, 4, 3],
+    'price': [300000, 400000, 350000, 500000, 450000]
 }
+
+# Create DataFrame
+df = pd.DataFrame(data)
+
+# Separate features (X) and target variable (y)
+X = df[['square_footage', 'bedrooms', 'bathrooms']]
+y = df['price']
+
+# Split the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Create and train the linear regression model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Predict house prices for the test set
+y_pred = model.predict(X_test)
+
+# Model performance evaluation
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Squared Error: {mse}")
+print(f"R-squared: {r2}")
+
+# Print the model coefficients
+print("Model coefficients:", model.coef_)
+print("Model intercept:", model.intercept_)
+
+# Predict the price of a house with 2500 sq ft, 3 bedrooms, and 2 bathrooms
+new_house = [[2500, 3, 2]]
+predicted_price = model.predict(new_house)
+print(f"Predicted price for the house: ${predicted_price[0]:,.2f}")
